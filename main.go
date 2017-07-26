@@ -5,8 +5,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/veandco/go-sdl2/img"
 	"github.com/veandco/go-sdl2/sdl"
-	ttf "github.com/veandco/go-sdl2/ttf"
+	"github.com/veandco/go-sdl2/ttf"
 )
 
 func main() {
@@ -34,23 +35,65 @@ func run() error {
 	}
 	defer w.Destroy()
 
-	_ = r
+	if err := drawTitle(r); err != nil {
+		return fmt.Errorf("could not draw title: %v", err)
+	}
+
 	time.Sleep(5 * time.Second)
 
-	return drawTitle()
+	if err := drawBackground(r); err != nil {
+		return fmt.Errorf("could not draw background: %v", err)
+	}
+
+	time.Sleep(5 * time.Second)
+
+	return nil
 }
 
-func drawTitle() error {
+func drawBackground(r *sdl.Renderer) error {
+	r.Clear()
+
+	t, err := img.LoadTexture(r, "res/imgs/full-bg.png")
+	if err != nil {
+		return fmt.Errorf("could not load background image: %v", err)
+	}
+	defer t.Destroy()
+
+	if err := r.Copy(t, nil, nil); err != nil {
+		return fmt.Errorf("could not copy texture to renderer: %v", err)
+	}
+
+	r.Present()
+	return nil
+}
+
+func drawTitle(r *sdl.Renderer) error {
+	r.Clear()
+
 	f, err := ttf.OpenFont("res/fonts/FiraCode-Light.ttf", 20)
 	if err != nil {
 		return fmt.Errorf("could not load font: %v", err)
 	}
+	defer f.Close()
 
 	c := sdl.Color{R: 255, G: 100, B: 0, A: 255}
 	s, err := f.RenderUTF8_Solid("Flappy Gopher", c)
 	if err != nil {
-		return fmt.Errorf("could not render text: %v", err)
+		return fmt.Errorf("could not render title: %v", err)
 	}
+	defer s.Free()
+
+	t, err := r.CreateTextureFromSurface(s)
+	if err != nil {
+		return fmt.Errorf("could not create texture: %v", err)
+	}
+	defer t.Destroy()
+
+	if err := r.Copy(t, nil, nil); err != nil {
+		return fmt.Errorf("could not copy texture to renderer: %v", err)
+	}
+
+	r.Present()
 
 	return nil
 }
